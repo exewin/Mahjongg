@@ -1,4 +1,5 @@
-#Cubejong
+# Cubejong
+
 Game made in August 2018. Creating it took me ~1 week.
 
 ![alt text](https://github.com/exewin/Mahjongg/blob/master/2.png)
