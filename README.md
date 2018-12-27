@@ -7,4 +7,4 @@ Game made in August 2018. Creating it took me ~1 week.
 
 More info: https://exewin.github.io/projects/cubejong/cubejong.html
 
-Play here: https://www.kongregate.com/games/windowsmemphis/mission-one
+Play here: https://www.kongregate.com/games/windowsmemphis/cubejong
