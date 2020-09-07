@@ -6,6 +6,10 @@ using UnityEngine.SceneManagement;
 
 public class Cache : MonoBehaviour 
 {
+	[SerializeField]private bool freezeTimer;
+	
+	private bool timeFrozen;
+	
 	
 	public struct SafeInt 
 	{
@@ -71,86 +75,96 @@ public class Cache : MonoBehaviour
 
 	}
 	
-	
-	Block block1;
-	Block block2;
-	
-	public Image[] musicSoundObjs;
-	public Sprite[] musicSoundSprites;
-	public AudioSource musicPlayer;
-	public AudioSource soundPlayer;
-	
-	bool musicMuted;
-	bool soundMuted;
-	
-	public GameObject rotator;
-	bool rotating;
-	
-	public GameObject effect;
-	public GameObject boomEffect;
-	
-	public GameObject bonusText;
-	
-	public GameObject shuffleScreen;
-	public GameObject shuffleBlock;
-	public GameObject gameOverScreen;
-	public GameObject nextLevelScreen;
-	public Text nextLevelScore;
-	public GameObject victoryScreen;
-	public Text lastLevelScore;
-	public Text lastLevelScoreTime;
-	public GameObject pauseScreen;
-	public GameObject lastScreen;
-	public Text lastScreenScore;
-	
-	public GameObject highlightSelected;
-	public GameObject highlightViewed;
-	
-	public RawImage UI_viewed;
-	public RawImage UI_selected;
-	
-	public Text scoreText;
-	SafeInt score;
-	int allPairs;
-	
-	public AudioClip[] sound;
-	public AudioClip soundOk;
-	public AudioClip soundError;
-	public AudioClip soundClip;
-	public AudioClip soundShuffle;
-	public AudioClip soundLevelPassed;
-	
-	AudioSource audioSource;
-	
-	public Texture2D emptyTexture;
-	
-	public Texture2D[] textures;
+	private const bool multiMatchBonus=true;
+	private int lastTypeMatch = 99;
 	
 	
-	public GameObject[] level;
-	byte curLevel;
-	public byte[] levelPairs;
+	private Block block1;
+	private Block block2;
 	
-	float bonusTimer=0;
-	SafeInt bonusMultiplier;
+	[SerializeField]private Image[] musicSoundObjs;
+	[SerializeField]private Sprite[] musicSoundSprites;
+	[SerializeField]private AudioSource musicPlayer;
+	[SerializeField]private AudioSource soundPlayer;
+	
+	private bool musicMuted;
+	private bool soundMuted;
+	
+	[SerializeField]private GameObject rotator;
+	private bool rotating;
+	
+	[SerializeField]private GameObject[] effect;
+	[SerializeField]private GameObject boomEffect;
+	
+	[SerializeField]private GameObject bonusText;
+	
+	[SerializeField]private GameObject shuffleScreen;
+	[SerializeField]private GameObject shuffleBlock;
+	[SerializeField]private GameObject gameOverScreen;
+	[SerializeField]private GameObject nextLevelScreen;
+	[SerializeField]private Text nextLevelScore;
+	[SerializeField]private GameObject victoryScreen;
+	[SerializeField]private Text lastLevelScore;
+	[SerializeField]private Text lastLevelScoreTime;
+	[SerializeField]private GameObject pauseScreen;
+	[SerializeField]private GameObject lastScreen;
+	[SerializeField]private Text lastScreenScore;
+	
+	[SerializeField]private GameObject highlightSelected;
+	[SerializeField]private GameObject highlightViewed;
+	
+	[SerializeField]private Image UI_padlock;
+	
+	[SerializeField]private RawImage UI_viewed;
+	[SerializeField]private RawImage UI_selected;
 	
 	
-	GameObject[] blocks;
-	List<int> clickableTypes = new List<int>();
-	List<Block> blockScript = new List<Block>();
-	
-	SafeFloat time;
-	public Text timeText;
-	protected bool allowTimer;
-	protected bool allowBonusTimer;
+	[SerializeField]private Text scoreText;
 	
 	
+	private SafeInt score;
+	private int allPairs;
 	
+	[SerializeField]private AudioClip[] sound;
+	[SerializeField]private AudioClip soundOk;
+	[SerializeField]private AudioClip soundError;
+	[SerializeField]private AudioClip soundClip;
+	[SerializeField]private AudioClip soundShuffle;
+	[SerializeField]private AudioClip soundLevelPassed;
+	
+	private AudioSource audioSource;
+	
+	[SerializeField]private Texture2D emptyTexture;
+	
+	[SerializeField]private Texture2D[] textures;
+	
+	[SerializeField]private GameObject[] level;
+	private byte curLevel;
+	[SerializeField]private byte[] levelPairs;
+	
+	[SerializeField]private Text bonusScoreTimer;
+	private float bonusTimer=0;
+	private SafeInt bonusMultiplier;
+	
+	
+	private GameObject[] blocks;
+	private List<int> clickableTypes = new List<int>();
+	private List<Block> blockScript = new List<Block>();
+	
+	private SafeFloat time;
+	[SerializeField]private Text timeText;
+	private bool allowTimer;
+	private bool allowBonusTimer;
+	
+	
+
 	public bool paused;
-	bool coroutined;
 	
-	public bool kongBuild;
-	public KongregateAPIBehaviour kongComp;
+	private bool coroutined;
+	
+	
+	[SerializeField]private bool kongBuild;
+	[SerializeField]private KongregateAPIBehaviour kongComp;
 	
 	
 	void Awake() 
@@ -193,23 +207,53 @@ public class Cache : MonoBehaviour
 		if(Input.GetKeyDown(KeyCode.RightArrow)||Input.GetKeyDown(KeyCode.D))
 		{
 			rotMe(false);
+		}		
+		if(Input.GetKey(KeyCode.UpArrow)||Input.GetKey(KeyCode.W))
+		{
+			rotator.transform.Translate(0,Time.deltaTime*5,0);
+			checkRotatorBoundaries();
+		}
+		if(Input.GetKey(KeyCode.DownArrow)||Input.GetKey(KeyCode.S))
+		{
+			rotator.transform.Translate(0,-Time.deltaTime*5,0);
+			checkRotatorBoundaries();
 		}
 		
-		if(bonusTimer>0)
+		if (Input.GetAxis("Mouse ScrollWheel") < 0f && Camera.main.orthographicSize < 10 ) // forward
 		{
-			bonusTimer-=Time.deltaTime*1;
-			if(bonusTimer<=0)
-			{
-				bonusTimer=0;
-				bonusMultiplier=new SafeInt(0);
-			}
+			Camera.main.orthographicSize++;
 		}
+		else if (Input.GetAxis("Mouse ScrollWheel") > 0f &&  Camera.main.orthographicSize > 4  ) // backwards
+		{
+			Camera.main.orthographicSize--;
+		}
+		
+		if (Input.GetMouseButton(1))
+		{
+			float h = Input.GetAxis("Mouse X");
+			if(h>3)
+				rotMe(true);
+			else if(h<-3)
+				rotMe(false);
+		}
+		
+		if(Input.GetMouseButton(2))
+		{
+			float j = Input.GetAxis("Mouse Y");
+			rotator.transform.Translate(0,-j*Time.deltaTime*5,0);
+			checkRotatorBoundaries();
+		}
+		
+		updateBonusTimerUI();
 		
 		if(time.GetValue()>0&&allowTimer)
 		{
-			time=time-Time.deltaTime*1;
-			int normalTime = (int)time.GetValue();
-			timeText.text = "Time: "+(normalTime/60)+":"+ (normalTime%60<10?"0" : "")+normalTime%60;
+			if(!timeFrozen)
+			{
+				time=time-Time.deltaTime*1;
+				int normalTime = (int)time.GetValue();
+				timeText.text = "Time: "+(normalTime/60)+":"+ (normalTime%60<10?"0" : "")+normalTime%60;
+			}
 		}
 		else if(time.GetValue()<=0)
 		{
@@ -218,8 +262,22 @@ public class Cache : MonoBehaviour
 		
 	}
 	
+	private void checkRotatorBoundaries()
+	{
+		if(rotator.transform.position.y>10)
+			rotator.transform.position = new Vector3(0,10,0);
+		else if(rotator.transform.position.y<-10)
+			rotator.transform.position = new Vector3(0,-10,0);
+	}
+	
 	void newLevel()
 	{
+		if(freezeTimer)
+		{
+			timeFrozen=true;
+			UI_padlock.gameObject.SetActive(true);
+		}
+		
 		clearRot();
 		level[curLevel].SetActive(true);
 		
@@ -268,27 +326,35 @@ public class Cache : MonoBehaviour
 			{
 				btext.GetComponent<TextPopUp>().assign("Good",Color.yellow,20);
 				updateScore(10+bonusMultiplier.GetValue()*2, btextScore);
+				Instantiate(effect[1],block1.gameObject.transform.position,transform.rotation);
+				Instantiate(effect[1],block2.gameObject.transform.position,transform.rotation);
 			}
 			else if(bonusint>=11&&bonusint<=18)
 			{
 				btext.GetComponent<TextPopUp>().assign("Great",Color.blue,25);
 				updateScore(10+bonusMultiplier.GetValue()*3, btextScore);
+				Instantiate(effect[2],block1.gameObject.transform.position,transform.rotation);
+				Instantiate(effect[2],block2.gameObject.transform.position,transform.rotation);
 			}
 			else if(bonusint>=19&&bonusint<=28)
 			{
 				btext.GetComponent<TextPopUp>().assign("Splendid",Color.green,30);
 				updateScore(10+bonusMultiplier.GetValue()*4, btextScore);
+				Instantiate(effect[3],block1.gameObject.transform.position,transform.rotation);
+				Instantiate(effect[3],block2.gameObject.transform.position,transform.rotation);
 			}
 			else if(bonusint+1==allPairs)
 			{
 				audioSource.PlayOneShot(sound[1],1);
 				Instantiate(boomEffect,block2.gameObject.transform.position,transform.rotation);
 				
-				btext.GetComponent<TextPopUp>().assign("FLAWLESS",Color.white,50);
+				btext.GetComponent<TextPopUp>().assign("FLAWLESS",Color.black,50);
 				updateScore(100+bonusMultiplier.GetValue()*6, btextScore);
 			}
 			else
 			{
+				Instantiate(effect[4],block1.gameObject.transform.position,transform.rotation);
+				Instantiate(effect[4],block2.gameObject.transform.position,transform.rotation);
 				btext.GetComponent<TextPopUp>().assign("Excellent",Color.magenta,35);
 				updateScore(10+bonusMultiplier.GetValue()*5, btextScore);
 			}
@@ -296,6 +362,8 @@ public class Cache : MonoBehaviour
 		else
 		{
 			updateScore(10+bonusMultiplier.GetValue(), btextScore);
+			Instantiate(effect[0],block1.gameObject.transform.position,transform.rotation);
+			Instantiate(effect[0],block2.gameObject.transform.position,transform.rotation);
 		}
 		
 		
@@ -303,9 +371,6 @@ public class Cache : MonoBehaviour
 		bonusMultiplier+=new SafeInt(1);
 
 		audioSource.PlayOneShot(sound[0],1);
-		
-		Instantiate(effect,block1.gameObject.transform.position,transform.rotation);
-		Instantiate(effect,block2.gameObject.transform.position,transform.rotation);
 		
 		blockScript.Remove(block1);
 		blockScript.Remove(block2);
@@ -336,6 +401,12 @@ public class Cache : MonoBehaviour
 		block1=null;
 		block2=null;
 		
+		if(freezeTimer&&timeFrozen)
+		{
+			timeFrozen=false;
+			UI_padlock.gameObject.SetActive(false);
+		}
+		
 		//any blocks left?
 		if(anyBlocks())
 		{
@@ -344,9 +415,30 @@ public class Cache : MonoBehaviour
 		}
 	}
 	
+	void updateBonusTimerUI()
+	{
+		if(bonusTimer>0)
+		{
+			bonusTimer-=Time.deltaTime*1;
+			bonusScoreTimer.text = bonusTimer.ToString("F2");
+			if(bonusTimer<=0)
+			{
+				bonusTimer=0;
+				bonusMultiplier=new SafeInt(0);
+			}
+			if(bonusTimer<=0) // disallow -0.02 etc.
+			{
+				bonusScoreTimer.text="";
+			}
+		}
+		else //safety
+		{
+			bonusScoreTimer.text="";
+		}
+	}
+	
 	void updateScore(int addScore, GameObject bts)
 	{
-		addScore/=EasyModeStatic.easyMode;
 		score=score + new SafeInt(addScore);
 		scoreText.text = "Score: "+score;
 		
@@ -385,7 +477,7 @@ public class Cache : MonoBehaviour
 		blocks = GameObject.FindGameObjectsWithTag("block");
 		
 		//htp
-		if(EasyModeStatic.easyMode==2)
+		//if(EasyModeStatic.easyMode==2) EASY MODE ALL TIME
 			for(int i = 0; i<blockScript.Count; i++)
 			{
 				blockScript[i].checkStateUltra();
@@ -455,7 +547,16 @@ public class Cache : MonoBehaviour
 			block2=block;
 			if(block1.type==block2.type)
 			{
+				if(multiMatchBonus)
+				{
+					if(lastTypeMatch == block1.type)
+					{
+						Debug.Log("multimatch");
+					}
+				}
+				lastTypeMatch = block1.type;
 				matchBlocks();
+				
 			}
 			else
 			{
@@ -608,7 +709,7 @@ public class Cache : MonoBehaviour
 			rotating=true;
 			var fromAngle = rotator.transform.rotation;
 			var toAngle = Quaternion.Euler(rotator.transform.eulerAngles + byAngles);
-			for(float t = 0f; t <= 1; t += Time.deltaTime/.5f) 
+			for(float t = 0f; t <= 1; t += Time.deltaTime/.3f) 
 			{
 				rotator.transform.rotation = Quaternion.Slerp(fromAngle, toAngle, t);
 				yield return null;

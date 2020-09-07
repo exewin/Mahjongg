@@ -23,7 +23,6 @@ public class TextPopUp : MonoBehaviour
 	{
 		transform.SetParent(GameObject.FindWithTag("canvas").transform);
 		component=GetComponent<Text>();
-		Debug.Log("3");
 		component.color=col;
 		color=component.color;
 		alpha=1;

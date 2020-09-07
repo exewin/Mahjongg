@@ -45,8 +45,8 @@ public class Block : MonoBehaviour
 		transform.position = startPos;
 		transform.rotation = startRot;
 		positioned=true;
-		if(EasyModeStatic.easyMode==2)
-			checkStateUltra(); //htp
+		//if(EasyModeStatic.easyMode==2) EASY MODE ALL TIME
+			checkStateUltra();
 		
 	}
 
@@ -78,7 +78,6 @@ public class Block : MonoBehaviour
 			cache.clearView();
 	}
 	
-	//only for htp
 	public void checkStateUltra()
 	{
 		if(checkState())
